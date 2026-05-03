@@ -350,10 +350,7 @@ sales-lead-management-backend/
 ├── scripts/                 # Utility scripts
 │   └── migrate.js           # Migration runner
 ├── tests/                   # Test suites
-│   ├── unit/
-│   ├── integration/
-│   ├── properties/
-│   └── smoke/
+│   └── unit/                # Unit tests for services
 ├── logs/                    # Application logs
 │   ├── combined.log
 │   └── error.log

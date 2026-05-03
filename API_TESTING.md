@@ -50,112 +50,7 @@ curl -X GET http://localhost:3000/
 
 ## 📋 Lead Management APIs
 
-### 1. Create a New Lead
-
-**Success Case:**
-```bash
-curl -X POST http://localhost:3000/leads \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test User",
-    "email": "test.user@example.com",
-    "phone": "0987654321",
-    "status": "NEW"
-  }'
-```
-
-**Expected Response (201):**
-```json
-{
-  "status": "success",
-  "data": {
-    "id": 6,
-    "name": "Test User",
-    "email": "test.user@example.com",
-    "phone": "0987654321",
-    "status": "NEW",
-    "reason": null,
-    "created_at": "2026-05-03T...",
-    "updated_at": "2026-05-03T..."
-  }
-}
-```
-
-**Error Case - Missing Required Field:**
-```bash
-curl -X POST http://localhost:3000/leads \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test User",
-    "phone": "0987654321"
-  }'
-```
-
-**Expected Response (400):**
-```json
-{
-  "status": "error",
-  "message": "Email is required",
-  "errorCode": "VALIDATION_ERROR"
-}
-```
-
-**Error Case - Invalid Email Format:**
-```bash
-curl -X POST http://localhost:3000/leads \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Test User",
-    "email": "invalid-email",
-    "phone": "0987654321",
-    "status": "NEW"
-  }'
-```
-
-**Expected Response (400):**
-```json
-{
-  "status": "error",
-  "message": "Invalid email format",
-  "errorCode": "VALIDATION_ERROR"
-}
-```
-
-**Error Case - Duplicate Email:**
-```bash
-# First, create a lead
-curl -X POST http://localhost:3000/leads \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Duplicate Test",
-    "email": "duplicate@example.com",
-    "phone": "0987654321",
-    "status": "NEW"
-  }'
-
-# Then try to create another with same email
-curl -X POST http://localhost:3000/leads \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Another User",
-    "email": "duplicate@example.com",
-    "phone": "0123456789",
-    "status": "NEW"
-  }'
-```
-
-**Expected Response (409):**
-```json
-{
-  "status": "error",
-  "message": "email already exists",
-  "errorCode": "DUPLICATE_ENTRY"
-}
-```
-
----
-
-### 2. Get All Leads (with Pagination & Filtering)
+### 1. Get All Leads (with Pagination )
 
 **Get All Leads (Default Pagination):**
 ```bash
@@ -192,24 +87,66 @@ curl -X GET http://localhost:3000/leads
 curl -X GET "http://localhost:3000/leads?page=1&limit=2"
 ```
 
-**Filter by Status:**
+
+**Error Case - Invalid Query Parameters (Extra Fields):**
 ```bash
-curl -X GET "http://localhost:3000/leads?status=CONTACTED"
+curl -X GET "http://localhost:3000/leads?page=1&limit=10&invalidParam=test"
 ```
 
-**Search by Name or Email:**
-```bash
-curl -X GET "http://localhost:3000/leads?search=john"
+**Expected Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Unrecognized key(s) in object: 'invalidParam'",
+  "errorCode": "VALIDATION_ERROR"
+}
 ```
 
-**Combined Filters:**
+**Error Case - Invalid Page Number:**
 ```bash
-curl -X GET "http://localhost:3000/leads?status=CONTACTED&search=sarah&page=1&limit=5"
+curl -X GET "http://localhost:3000/leads?page=0"
+```
+
+**Expected Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Page must be greater than 0",
+  "errorCode": "VALIDATION_ERROR"
+}
+```
+
+**Error Case - Invalid Limit (Too High):**
+```bash
+curl -X GET "http://localhost:3000/leads?limit=200"
+```
+
+**Expected Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Limit must be between 1 and 100",
+  "errorCode": "VALIDATION_ERROR"
+}
+```
+
+**Error Case - Non-numeric Page:**
+```bash
+curl -X GET "http://localhost:3000/leads?page=abc"
+```
+
+**Expected Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Page must be a positive integer",
+  "errorCode": "VALIDATION_ERROR"
+}
 ```
 
 ---
 
-### 3. Get Lead by ID
+### 2. Get Lead by ID
 
 **Success Case:**
 ```bash
@@ -256,93 +193,22 @@ curl -X GET http://localhost:3000/leads/abc
 ```json
 {
   "status": "error",
-  "message": "Invalid id format",
+  "message": "Lead ID must be a positive integer",
   "errorCode": "VALIDATION_ERROR"
 }
 ```
 
----
-
-### 4. Update Lead Status
-
-**Valid Transition - NEW → CONTACTED:**
+**Error Case - Negative ID:**
 ```bash
-curl -X PATCH http://localhost:3000/leads/1/status \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "CONTACTED"
-  }'
-```
-
-**Expected Response (200):**
-```json
-{
-  "status": "success",
-  "data": {
-    "id": 1,
-    "name": "John Smith",
-    "email": "john.smith@example.com",
-    "phone": "0901234567",
-    "status": "CONTACTED",
-    "reason": null,
-    "created_at": "2026-04-15T09:30:00.000Z",
-    "updated_at": "2026-05-03T..."
-  }
-}
-```
-
-**Valid Transition - CONTACTED → QUALIFIED:**
-```bash
-curl -X PATCH http://localhost:3000/leads/2/status \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "QUALIFIED"
-  }'
-```
-
-**Valid Transition - QUALIFIED → CLOSED (with reason):**
-```bash
-curl -X PATCH http://localhost:3000/leads/3/status \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "CLOSED",
-    "reason": "Deal successfully closed"
-  }'
-```
-
-**Invalid Transition - NEW → QUALIFIED:**
-```bash
-curl -X PATCH http://localhost:3000/leads/1/status \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "QUALIFIED"
-  }'
+curl -X GET http://localhost:3000/leads/-1
 ```
 
 **Expected Response (400):**
 ```json
 {
   "status": "error",
-  "message": "Invalid status transition from NEW to QUALIFIED",
-  "errorCode": "INVALID_STATUS_TRANSITION"
-}
-```
-
-**Invalid Transition - CLOSED → Any Status:**
-```bash
-curl -X PATCH http://localhost:3000/leads/4/status \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "NEW"
-  }'
-```
-
-**Expected Response (400):**
-```json
-{
-  "status": "error",
-  "message": "Invalid status transition from CLOSED to NEW",
-  "errorCode": "INVALID_STATUS_TRANSITION"
+  "message": "Lead ID must be a positive integer",
+  "errorCode": "VALIDATION_ERROR"
 }
 ```
 
@@ -350,7 +216,7 @@ curl -X PATCH http://localhost:3000/leads/4/status \
 
 ## 📝 Activity Management APIs
 
-### 5. Create Activity for a Lead
+### 3. Create Activity for a Lead
 
 **Success Case - CALL Activity:**
 ```bash
@@ -433,6 +299,108 @@ curl -X POST http://localhost:3000/leads/1/activities \
 }
 ```
 
+**Error Case - Extra Fields in Activity (Zod Schema Validation):**
+```bash
+curl -X POST http://localhost:3000/leads/1/activities \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "CALL",
+    "note": "Called customer",
+    "duration": 30,
+    "outcome": "positive"
+  }'
+```
+
+**Expected Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Unrecognized key(s) in object: 'duration', 'outcome'",
+  "errorCode": "VALIDATION_ERROR"
+}
+```
+
+**Error Case - Wrong Field Name in Activity:**
+```bash
+curl -X POST http://localhost:3000/leads/1/activities \
+  -H "Content-Type: application/json" \
+  -d '{
+    "activityType": "CALL",
+    "description": "Called customer"
+  }'
+```
+
+**Expected Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Activity type is required",
+  "errorCode": "VALIDATION_ERROR"
+}
+```
+
+**Error Case - Wrong Data Type in Activity:**
+```bash
+curl -X POST http://localhost:3000/leads/1/activities \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "CALL",
+    "note": 12345
+  }'
+```
+
+**Expected Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Note must be a string",
+  "errorCode": "VALIDATION_ERROR"
+}
+```
+
+**Error Case - Note Too Long:**
+```bash
+curl -X POST http://localhost:3000/leads/1/activities \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"type\": \"CALL\",
+    \"note\": \"$(printf 'A%.0s' {1..2001})\"
+  }"
+```
+
+**Expected Response (400):**
+```json
+{
+  "status": "error",
+  "message": "Note cannot exceed 2000 characters",
+  "errorCode": "VALIDATION_ERROR"
+}
+```
+
+**Error Case - HTML in Note (XSS Prevention):**
+```bash
+curl -X POST http://localhost:3000/leads/1/activities \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "NOTE",
+    "note": "<script>alert(\"XSS\")</script>Customer wants demo"
+  }'
+```
+
+**Expected Response (201) - HTML stripped:**
+```json
+{
+  "status": "success",
+  "data": {
+    "id": 16,
+    "lead_id": 1,
+    "type": "NOTE",
+    "note": "Customer wants demo",
+    "created_at": "2026-05-03T..."
+  }
+}
+```
+
 **Error Case - Lead Not Found:**
 ```bash
 curl -X POST http://localhost:3000/leads/999/activities \
@@ -454,7 +422,7 @@ curl -X POST http://localhost:3000/leads/999/activities \
 
 ---
 
-### 6. Get All Activities for a Lead
+### 4. Get All Activities for a Lead
 
 **Success Case:**
 ```bash
@@ -525,111 +493,61 @@ curl -X GET http://localhost:3000/leads/999/activities
 Here's a complete workflow to test the entire system:
 
 ```bash
-# 1. Create a new lead
-curl -X POST http://localhost:3000/leads \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Alice Johnson",
-    "email": "alice.johnson@example.com",
-    "phone": "0999888777",
-    "status": "NEW"
-  }'
-# Note the returned ID (e.g., id: 6)
-
-# 2. Add first activity
-curl -X POST http://localhost:3000/leads/6/activities \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "CALL",
-    "note": "Initial contact call - customer interested in Product X"
-  }'
-
-# 3. Update status to CONTACTED
-curl -X PATCH http://localhost:3000/leads/6/status \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "CONTACTED"
-  }'
-
-# 4. Add follow-up activity
-curl -X POST http://localhost:3000/leads/6/activities \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "EMAIL",
-    "note": "Sent detailed proposal and pricing"
-  }'
-
-# 5. Update status to QUALIFIED
-curl -X PATCH http://localhost:3000/leads/6/status \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "QUALIFIED"
-  }'
-
-# 6. Add another activity
-curl -X POST http://localhost:3000/leads/6/activities \
-  -H "Content-Type: application/json" \
-  -d '{
-    "type": "CALL",
-    "note": "Customer approved budget, ready to proceed"
-  }'
-
-# 7. Close the deal
-curl -X PATCH http://localhost:3000/leads/6/status \
-  -H "Content-Type: application/json" \
-  -d '{
-    "status": "CLOSED",
-    "reason": "Contract signed successfully"
-  }'
-
-# 8. View complete lead details
-curl -X GET http://localhost:3000/leads/6
-
-# 9. View all activities (should include status change activities)
-curl -X GET http://localhost:3000/leads/6/activities
-
-# 10. List all leads
+# 1. Get all leads
 curl -X GET http://localhost:3000/leads
+
+# 2. Get a specific lead (assuming lead ID 1 exists from seed data)
+curl -X GET http://localhost:3000/leads/1
+
+# 3. Add activity to lead
+curl -X POST http://localhost:3000/leads/1/activities \
+  -H "Content-Type: application/json" \
+  -d '{
+    "type": "CALL",
+    "note": "Follow-up call with customer"
+  }'
+
+# 4. Get all activities for the lead
+curl -X GET http://localhost:3000/leads/1/activities
+
+# 5. Test pagination
+curl -X GET "http://localhost:3000/leads?page=1&limit=5"
+
 ```
-
----
-
-## 📊 Valid Status Transitions
-
-| From | To | Valid? |
-|------|-----|--------|
-| NEW | CONTACTED | ✅ Yes |
-| NEW | QUALIFIED | ❌ No |
-| NEW | CLOSED | ❌ No |
-| CONTACTED | QUALIFIED | ✅ Yes |
-| CONTACTED | CLOSED | ✅ Yes |
-| QUALIFIED | CLOSED | ✅ Yes |
-| QUALIFIED | NEW | ❌ No |
-| QUALIFIED | CONTACTED | ❌ No |
-| CLOSED | (any) | ❌ No (terminal state) |
 
 ---
 
 ## 🎯 Testing Checklist
 
+### Basic Functionality
 - [ ] Health check endpoint works
-- [ ] Create lead with valid data
-- [ ] Create lead fails with missing fields
-- [ ] Create lead fails with invalid email
-- [ ] Create lead fails with duplicate email
 - [ ] Get all leads with pagination
-- [ ] Filter leads by status
-- [ ] Search leads by name/email
 - [ ] Get lead by ID
-- [ ] Get lead fails with invalid ID
-- [ ] Update status with valid transition
-- [ ] Update status fails with invalid transition
-- [ ] Cannot update from CLOSED status
 - [ ] Create activity for lead
-- [ ] Create activity fails with invalid type
 - [ ] Get all activities for lead
-- [ ] Status change creates automatic activity
-- [ ] Complete workflow (NEW → CONTACTED → QUALIFIED → CLOSED)
+
+### Lead Query Validation (Zod Schema)
+- [ ] Get leads fails with extra query parameters
+- [ ] Get leads fails with invalid page number (0 or negative)
+- [ ] Get leads fails with invalid limit (>100)
+- [ ] Get leads fails with non-numeric page/limit
+- [ ] Get lead by ID fails with invalid ID format
+- [ ] Get lead by ID fails with negative ID
+
+### Activity Validation (Zod Schema)
+- [ ] Create activity fails with missing note
+- [ ] Create activity fails with invalid type
+- [ ] Create activity fails with extra fields
+- [ ] Create activity fails with wrong field names
+- [ ] Create activity fails with wrong data types
+- [ ] Create activity fails with note too long (>2000 chars)
+- [ ] Create activity strips HTML from note (XSS prevention)
+- [ ] Create activity fails for non-existent lead
+
+### Activity Query Validation (Zod Schema)
+- [ ] Get activities fails with invalid lead ID
+- [ ] Get activities fails with extra query parameters
+- [ ] Get activities fails with invalid pagination params
 
 ---
 
@@ -693,6 +611,32 @@ curl -X GET http://localhost:3000/leads
 **500 Internal Server Error:**
 - Check server logs in `logs/error.log`
 - Verify database connection
+
+---
+
+## 🛡️ Zod Schema Validation Summary
+
+The API uses Zod schemas with `.strict()` mode to ensure data integrity:
+
+### Key Features:
+1. **Strict Mode**: Rejects any extra fields not defined in schema
+2. **Type Safety**: Validates data types (string, number, enum, etc.)
+3. **Field Validation**: Checks required fields, formats, and constraints
+4. **Sanitization**: Strips HTML from text inputs to prevent XSS
+5. **Transform**: Converts string IDs to integers, sanitizes inputs
+
+### What Gets Validated:
+- **Lead Creation**: name, email, phone, status (no extra fields allowed)
+- **Activity Creation**: type (enum), note (string, max 2000 chars, HTML stripped)
+- **Query Parameters**: page (>0), limit (1-100), no extra params
+- **Path Parameters**: leadId (positive integer only)
+
+### Common Validation Errors:
+- `Unrecognized key(s) in object` - Extra fields sent
+- `[Field] is required` - Missing required field
+- `[Field] must be a string/number` - Wrong data type
+- `Invalid [field] format` - Format validation failed
+- `[Field] must be between X and Y` - Range validation failed
 
 ---
 
