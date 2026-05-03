@@ -32,7 +32,6 @@ class Activity {
      */
     static async findByLeadId(leadId, options = {}) {
         const { page = null, limit = null } = options;
-        const params = [leadId];
 
         // Get total count
         const countQuery = 'SELECT COUNT(*) as total FROM activities WHERE lead_id = ?';
@@ -43,13 +42,13 @@ class Activity {
         let dataQuery = `SELECT * FROM activities 
                          WHERE lead_id = ? 
                          ORDER BY created_at DESC`;
+        let params = [leadId];
 
         // Only add LIMIT/OFFSET if pagination params are provided
         if (page !== null && limit !== null) {
-            // page and limit are already numbers from service
             const offset = (page - 1) * limit;
-            dataQuery += ` LIMIT ? OFFSET ?`;
-            params.push(limit, offset);
+            // Use direct values for LIMIT/OFFSET (already validated as numbers)
+            dataQuery += ` LIMIT ${limit} OFFSET ${offset}`;
         }
 
         const rows = await execute(dataQuery, params);

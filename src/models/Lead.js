@@ -21,12 +21,7 @@ class Lead {
      * @returns {Promise<Object>} { leads: [], total: number }
      */
     static async findAll(options = {}) {
-        const {
-            page = null,
-            limit = null
-        } = options;
-
-        const params = [];
+        const { page = null, limit = null } = options;
 
         // Get total count
         const countQuery = 'SELECT COUNT(*) as total FROM leads';
@@ -35,13 +30,13 @@ class Lead {
 
         // Build data query with optional pagination
         let dataQuery = 'SELECT * FROM leads ORDER BY created_at DESC';
+        let params = [];
 
         // Only add LIMIT/OFFSET if pagination params are provided
         if (page !== null && limit !== null) {
-            // page and limit are already numbers from service
             const offset = (page - 1) * limit;
-            dataQuery += ` LIMIT ? OFFSET ?`;
-            params.push(limit, offset);
+            // Use direct values for LIMIT/OFFSET (already validated as numbers)
+            dataQuery += ` LIMIT ${limit} OFFSET ${offset}`;
         }
 
         const rows = await execute(dataQuery, params);
