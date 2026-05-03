@@ -1,6 +1,8 @@
 const { describe, it, expect, beforeEach } = require('@jest/globals');
 const ActivityService = require('../../../src/services/activity.service');
 const { NotFoundError, ValidationError } = require('../../../src/errors');
+const { createActivitySchema } = require('../../../src/schemas/activity.schema');
+const sanitize = require('../../../src/utils/sanitize');
 
 describe('ActivityService', () => {
     let activityService;
