@@ -309,6 +309,8 @@ This project was developed in collaboration with **Kiro**, an AI-powered develop
 - Implementation of design patterns
 - Validation logic and error handling
 - Documentation generation
+- Suggest alternative approaches
+- Refine implementation details
 
 All architectural decisions, business logic validation, and security reviews were conducted with human oversight. For detailed information about the AI collaboration process, see the [System Design Document](./docs/system-design.md#3--ai-collaboration-in-design-phase).
 
