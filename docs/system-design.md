@@ -3,7 +3,7 @@
 
 ---
 
-## 1. 📌 Overview
+## 1. 📌 System Overview
 
 This system is a lightweight backend service designed to help sales teams manage incoming leads and track follow-up activities.
 
