@@ -13,22 +13,24 @@ function errorHandler(err, req, res, next) {
     const statusCode = err.statusCode || 500;
     const errorCode = err.errorCode || 'INTERNAL_ERROR';
 
-    // Log error details
-    logger.error({
-        message: err.message,
-        stack: err.stack,
+    // Structured error logging (flattened)
+    logger.error(err.message, {
+        requestId: req.requestId,
+        method: req.method,
+        path: req.originalUrl || req.url,
         statusCode: statusCode,
         errorCode: errorCode,
-        path: req.path,
-        method: req.method,
-        timestamp: new Date().toISOString()
+        stack: err.stack,
+        ...(err.field && { field: err.field }),
+        ...(err.resource && { resource: err.resource })
     });
 
     // Build error response
     const errorResponse = {
         status: 'error',
         message: err.message || 'Internal server error',
-        errorCode: errorCode
+        errorCode: errorCode,
+        ...(req.requestId && { requestId: req.requestId })
     };
 
     // Include stack trace in development
